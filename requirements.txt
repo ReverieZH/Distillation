@@ -1,6 +1,12 @@
-Flask
+Flask~=2.1.2
 Flask-Migrate
 Flask-SQLAlchemy
 PyMySQL
 cryptography
+redis~=4.3.1
+PyJWT~=2.4.0
 torch
+werkzeug~=2.1.2
+alembic~=1.8.0
+sqlalchemy~=1.4.37
+cos-python-sdk-v5

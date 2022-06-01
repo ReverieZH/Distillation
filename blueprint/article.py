@@ -1,4 +1,6 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, _request_ctx_stack
+from exts import cos_client
+from .decorators import jwt_required
 
 bp = Blueprint('article', __name__, url_prefix="/api/article")
 
@@ -16,3 +18,10 @@ def generate_by_doc():
 @bp.route("/text")
 def generate_by_text():
     return "由文本方式抽取"
+
+
+@bp.route("/history")
+@jwt_required
+def get_history():
+    user = _request_ctx_stack.top.current_identity
+    return "获取历史记录"
