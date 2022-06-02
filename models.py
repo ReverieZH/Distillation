@@ -10,3 +10,4 @@ class UserModel(db.Model):
     phone = db.Column(db.String(11), nullable=False, unique=True)
     password = db.Column(db.String(200), nullable=False)
     join_time = db.Column(db.DateTime, default=datetime.now)
+    icon = db.Column(db.String(200), nullable=True)

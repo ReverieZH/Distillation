@@ -24,7 +24,7 @@ def valid_code():
         return jsonify(status='失败', msg="验证码发送失败")
 
 
-@bp.route("/register")
+@bp.route("/register", methods=['POST'])
 def register():
     return "注册"
 
