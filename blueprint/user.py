@@ -5,6 +5,7 @@ from .decorators import jwt_encode, jwt_required, current_identity
 from models import UserModel
 from blueprint import RETCODE
 from aliyunsdkdysmsapi.request.v20170525.SendSmsRequest import SendSmsRequest
+from .utils import response_data
 import random
 
 bp = Blueprint('user', __name__, url_prefix="/api/user")
@@ -36,6 +37,15 @@ def valid_code():
 
 @bp.route("/register", methods=['POST'])
 def register():
+    username = request.json.get('username', '')
+    password = request.json.get('password', '')
+    phone = request.json.get('phone', '')
+    r_code = request.json.get('code', '')
+    code = redis_store.get('valid_code:{}'.format(phone))
+    if code is None:
+        response_data['meta']['msg'] = '验证码过期'
+        response_data['meta']['status'] = RETCODE.CODEEXPIRES
+        return jsonify(response_data)
     return "注册"
 
 
