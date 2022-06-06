@@ -24,7 +24,7 @@ def valid_code():
         sms_request = SendSmsRequest()
         sms_request.set_accept_format('json')
         sms_request.set_SignName("阿里云短信测试")
-        sms_request.set_TemplateCode("SMS_243280739")
+        sms_request.set_TemplateCode("SMS_154950909")
         sms_request.set_PhoneNumbers(phone)
         sms_request.set_TemplateParam("{\"code\":\"%s\"}" % code)
         sms_response = client.do_action_with_exception(sms_request)
