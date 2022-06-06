@@ -1,3 +1,5 @@
+import re
+
 from flask import Blueprint, jsonify, request, make_response
 from exts import *
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -39,6 +41,8 @@ def valid_code():
 def register():
     username = request.json.get('username', '')
     password = request.json.get('password', '')
+    confirm_password = request.json.get('confirm_password', '')
+    email = request.json.get('email', '')
     phone = request.json.get('phone', '')
     r_code = request.json.get('code', '')
     code = redis_store.get('valid_code:{}'.format(phone))
@@ -46,7 +50,29 @@ def register():
         response_data['meta']['msg'] = '验证码过期'
         response_data['meta']['status'] = RETCODE.CODEEXPIRES
         return jsonify(response_data)
-    return "注册"
+    if code != r_code:
+        response_data['meta']['msg'] = '验证码错误'
+        response_data['meta']['status'] = RETCODE.CODEERR
+        return jsonify(response_data)
+    if password != confirm_password:
+        response_data['meta']['msg'] = '两次密码不一致'
+        response_data['meta']['status'] = RETCODE.PWDDIFF
+        return jsonify(response_data)
+    try:
+        user = UserModel(username=username, password=generate_password_hash(password), email=email, phone=phone, icon='')
+        db.session.add(user)
+        db.session.commit()
+        response_data['meta']['msg'] = '注册成功'
+        response_data['meta']['status'] = RETCODE.OK
+    except Exception as e:
+        result1 = re.search('Duplicate entry.*key.*username', str(e))
+        if result1 is not None:
+            response_data['meta']['msg'] = '用户名重复'
+            response_data['meta']['status'] = RETCODE.EXCEPTION
+        else:
+            response_data['meta']['msg'] = '注册失败'
+            response_data['meta']['status'] = RETCODE.EXCEPTION
+    return jsonify(response_data)
 
 
 @bp.route("/login", methods=['POST'])
