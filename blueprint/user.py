@@ -66,6 +66,7 @@ def register():
         response_data['meta']['msg'] = '注册成功'
         response_data['meta']['status'] = RETCODE.OK
     except Exception as e:
+        db.session.rollback()
         result1 = re.search('Duplicate entry.*key.*username', str(e))
         result2 = re.search('Duplicate entry.*key.*phone', str(e))
         if result1 is not None:
