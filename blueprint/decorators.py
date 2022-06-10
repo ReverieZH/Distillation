@@ -5,6 +5,7 @@ from functools import wraps
 from werkzeug.local import LocalProxy
 from flask import request, jsonify, _request_ctx_stack, current_app
 from blueprint import RETCODE
+import re
 
 current_identity = LocalProxy(lambda: getattr(_request_ctx_stack.top, 'current_identity', None))
 
@@ -65,4 +66,26 @@ def jwt_required(fn):
         if payload.get('identity') is None:
             return jsonify(code=RETCODE.NOLOGIN, msg='用户不存在')
         return fn(*args, **kwargs)
+
+    return wapper
+
+
+def register_required(fn):
+    @wraps(fn)
+    def wapper(*args, **kwargs):
+        username = request.json.get('username', None)
+        password = request.json.get('password', None)
+        confirm_password = request.json.get('confirm_password', None)
+        phone = request.json.get('phone', None)
+        r_code = request.json.get('code', None)
+        if username is None or password is None or confirm_password is None or phone is None or r_code is None:
+            return jsonify(code=RETCODE.PARAMERR, msg='您有信息未填写')
+        phone_match = re.search(re.compile(r"1[356789]\d{9}"), phone)
+        password_match = re.search(re.compile(r'[0-9a-zA-Z]{8,10}'), password)
+        if phone_match is None:
+            return jsonify(code=RETCODE.PARAMERR, msg='手机号格式不正确')
+        if password_match is None:
+            return jsonify(code=RETCODE.PARAMERR, msg='密码格式不正确,包含数字、大写或小写字母8到16位')
+        return fn(*args, **kwargs)
+
     return wapper

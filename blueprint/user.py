@@ -8,6 +8,7 @@ from models import UserModel
 from blueprint import RETCODE
 from aliyunsdkdysmsapi.request.v20170525.SendSmsRequest import SendSmsRequest
 from .utils import response_data
+from .decorators import register_required
 import random
 
 bp = Blueprint('user', __name__, url_prefix="/api/user")
@@ -38,13 +39,13 @@ def valid_code():
 
 
 @bp.route("/register", methods=['POST'])
+@register_required
 def register():
-    username = request.json.get('username', '')
-    password = request.json.get('password', '')
-    confirm_password = request.json.get('confirm_password', '')
-    email = request.json.get('email', '')
-    phone = request.json.get('phone', '')
-    r_code = request.json.get('code', '')
+    username = request.json.get('username', None)
+    password = request.json.get('password', None)
+    confirm_password = request.json.get('confirm_password', None)
+    phone = request.json.get('phone',  None)
+    r_code = request.json.get('code',  None)
     code = redis_store.get('valid_code:{}'.format(phone))
     if code is None:
         response_data['meta']['msg'] = '验证码过期'
@@ -59,16 +60,21 @@ def register():
         response_data['meta']['status'] = RETCODE.PWDDIFF
         return jsonify(response_data)
     try:
-        user = UserModel(username=username, password=generate_password_hash(password), email=email, phone=phone, icon='')
+        user = UserModel(username=username, password=generate_password_hash(password), phone=phone, icon='')
         db.session.add(user)
         db.session.commit()
         response_data['meta']['msg'] = '注册成功'
         response_data['meta']['status'] = RETCODE.OK
     except Exception as e:
         result1 = re.search('Duplicate entry.*key.*username', str(e))
+        result2 = re.search('Duplicate entry.*key.*phone', str(e))
         if result1 is not None:
-            response_data['meta']['msg'] = '用户名重复'
+            response_data['meta']['msg'] = '此用户名已经注册过，请更换用户名'
             response_data['meta']['status'] = RETCODE.EXCEPTION
+        elif result2 is not None:
+            response_data['meta']['msg'] = '此手机号已经注册过，请更换手机号码'
+            response_data['meta']['status'] = RETCODE.EXCEPTION
+            return jsonify(response_data)
         else:
             response_data['meta']['msg'] = '注册失败'
             response_data['meta']['status'] = RETCODE.EXCEPTION
