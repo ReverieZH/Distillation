@@ -86,11 +86,49 @@ def login():
     username = request.json.get('username', '')
     password = request.json.get('password', '')
     if len(username) == 0 or len(password) == 0:
-        return jsonify(code=RETCODE.LOGINERR, msg='请输入正确的用户名或密码')
+        response_data['meta']['msg'] = '请输入正确的用户名或密码'
+        response_data['meta']['status'] = RETCODE.LOGINERR
+        return jsonify(response_data)
     user = UserModel.query.filter(UserModel.username == username).first()
     if not user:
-        return jsonify(code=RETCODE.NOUSER, msg='未找到用户')
+        response_data['meta']['msg'] = '未找到用户'
+        response_data['meta']['status'] = RETCODE.NOUSER
+        return jsonify(response_data)
     if not check_password_hash(user.password, password):
-        return jsonify(code=RETCODE.PWDERR, msg='密码错误')
+        response_data['meta']['msg'] = '密码错误'
+        response_data['meta']['status'] = RETCODE.PWDERR
+        return jsonify(response_data)
     token = jwt_encode({'uid': user.id, 'username': user.username})
-    return jsonify(code=RETCODE.OK, data={'token': token})
+    response_data['meta']['msg'] = '登录成功'
+    response_data['meta']['status'] = RETCODE.OK
+    response_data['data']['token'] = token
+    return jsonify(response_data)
+
+
+@bp.route("/phone_login", methods=['POST'])
+def phone_login():
+    phone = request.json.get('phone', '')
+    r_code = request.json.get('code', None)
+    code = redis_store.get('valid_code:{}'.format(phone))
+    if len(phone) == 0 or len(r_code) == 0:
+        response_data['meta']['msg'] = '请正确输入手机号或验证码'
+        response_data['meta']['status'] = RETCODE.LOGINERR
+        return jsonify(response_data)
+    if code is None:
+        response_data['meta']['msg'] = '验证码过期'
+        response_data['meta']['status'] = RETCODE.CODEEXPIRES
+        return jsonify(response_data)
+    if code != r_code:
+        response_data['meta']['msg'] = '验证码错误'
+        response_data['meta']['status'] = RETCODE.CODEERR
+        return jsonify(response_data)
+    user = UserModel.query.filter(UserModel.phone == phone).first()
+    if not user:
+        response_data['meta']['msg'] = '未找到用户'
+        response_data['meta']['status'] = RETCODE.NOUSER
+        return jsonify(response_data)
+    token = jwt_encode({'uid': user.id, 'username': user.username})
+    response_data['meta']['msg'] = '登录成功'
+    response_data['meta']['status'] = RETCODE.OK
+    response_data['data']['token'] = token
+    return jsonify(response_data)
