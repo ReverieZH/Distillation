@@ -57,9 +57,9 @@ def save_result():
         response_data['meta']['msg'] = '保存成功'
         response_data['meta']['status'] = RETCODE.OK
         response_data['data']['article_id'] = article.id
-        db.session.commit()  # 云端保存失败回滚
+        db.session.commit()
     except Exception as e:
-        db.session.rollback()
+        db.session.rollback()  # 数据库添加失败或云端保存失败时回滚
         response_data['meta']['msg'] = '保存失败'
         response_data['meta']['status'] = RETCODE.EXCEPTION
     return jsonify(response_data)
@@ -72,13 +72,13 @@ def get_history():
     try:
         articles = ArticleModel.query.filter(ArticleModel.user_id == user['uid']).order_by(text('-join_time')).all()
         data_json = json.loads(json.dumps(articles, cls=JSONEncoder))
+        response_data['meta']['msg'] = '查找成功'
+        response_data['meta']['status'] = RETCODE.OK
+        response_data['data']['articles'] = data_json
     except Exception as e:
         response_data['meta']['msg'] = '查找失败'
         response_data['meta']['status'] = RETCODE.EXCEPTION
         return jsonify(response_data)
-    response_data['meta']['msg'] = '查找成功'
-    response_data['meta']['status'] = RETCODE.OK
-    response_data['data']['articles'] = data_json
     return jsonify(response_data)
 
 
@@ -92,6 +92,7 @@ def get_history_detail(id):
         response_data['meta']['status'] = RETCODE.NODETAIL
         return jsonify(response_data)
     try:
+        # 从云端读取数据
         response = cos_client.get_object(   # 从云端获取对应文本数据
             Bucket=config.bucket,
             Key=article.filepath,
@@ -102,13 +103,14 @@ def get_history_detail(id):
             stream = response['Body'].get_raw_stream().read(1024)
         remote_file.seek(0)
         text = remote_file.read().decode('utf-8')
+        # 返回数据
+        response_data['meta']['msg'] = '获取成功'
+        response_data['meta']['status'] = RETCODE.OK
+        data_json = json.loads(json.dumps(article, cls=JSONEncoder))
+        data_json['text'] = text
+        response_data['data']['article'] = data_json
     except Exception as e:
         response_data['meta']['msg'] = '获取失败'
         response_data['meta']['status'] = RETCODE.EXCEPTION
         return jsonify(response_data)
-    response_data['meta']['msg'] = '获取成功'
-    response_data['meta']['status'] = RETCODE.OK
-    data_json = json.loads(json.dumps(article, cls=JSONEncoder))
-    data_json['text'] = text
-    response_data['data']['article'] = data_json
     return jsonify(response_data)
