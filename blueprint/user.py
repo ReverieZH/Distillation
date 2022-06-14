@@ -7,7 +7,7 @@ from .decorators import jwt_encode, jwt_required, current_identity
 from models import UserModel
 from blueprint import RETCODE
 from aliyunsdkdysmsapi.request.v20170525.SendSmsRequest import SendSmsRequest
-from .utils import response_data
+from .utils import gen_response_data
 from .decorators import register_required
 import random
 
@@ -17,8 +17,7 @@ bp = Blueprint('user', __name__, url_prefix="/api/user")
 @bp.route('/valid_code', methods=['POST'])
 def valid_code():
     # 获取数据
-    phone = request.args.get('phone')
-
+    phone = request.json.get('phone')
     try:
         # 生成四位随机数字字母作为验证码
         code = random.sample('0123456789', 4)
@@ -48,37 +47,30 @@ def register():
     r_code = request.json.get('code',  None)
     code = redis_store.get('valid_code:{}'.format(phone))
     if code is None:
-        response_data['meta']['msg'] = '验证码过期'
-        response_data['meta']['status'] = RETCODE.CODEEXPIRES
+        response_data = gen_response_data(RETCODE.CODEEXPIRES, '验证码过期')
         return jsonify(response_data)
     if code != r_code:
-        response_data['meta']['msg'] = '验证码错误'
-        response_data['meta']['status'] = RETCODE.CODEERR
+        response_data = gen_response_data(RETCODE.CODEERR, '验证码错误')
         return jsonify(response_data)
     if password != confirm_password:
-        response_data['meta']['msg'] = '两次密码不一致'
-        response_data['meta']['status'] = RETCODE.PWDDIFF
+        response_data = gen_response_data(RETCODE.PWDDIFF, '两次密码不一致')
         return jsonify(response_data)
     try:
         user = UserModel(username=username, password=generate_password_hash(password), phone=phone, icon='')
         db.session.add(user)
         db.session.commit()
-        response_data['meta']['msg'] = '注册成功'
-        response_data['meta']['status'] = RETCODE.OK
+        response_data = gen_response_data(RETCODE.OK, '注册成功')
     except Exception as e:
         db.session.rollback()
         result1 = re.search('Duplicate entry.*key.*username', str(e))
         result2 = re.search('Duplicate entry.*key.*phone', str(e))
         if result1 is not None:
-            response_data['meta']['msg'] = '此用户名已经注册过，请更换用户名'
-            response_data['meta']['status'] = RETCODE.EXCEPTION
+            response_data = gen_response_data(RETCODE.EXCEPTION, '此用户名已经注册过，请更换用户名')
         elif result2 is not None:
-            response_data['meta']['msg'] = '此手机号已经注册过，请更换手机号码'
-            response_data['meta']['status'] = RETCODE.EXCEPTION
+            response_data = gen_response_data(RETCODE.EXCEPTION, '此手机号已经注册过，请更换手机号码')
             return jsonify(response_data)
         else:
-            response_data['meta']['msg'] = '注册失败'
-            response_data['meta']['status'] = RETCODE.EXCEPTION
+            response_data = gen_response_data(RETCODE.EXCEPTION, '注册失败')
     return jsonify(response_data)
 
 
@@ -87,22 +79,17 @@ def login():
     username = request.json.get('username', '')
     password = request.json.get('password', '')
     if len(username) == 0 or len(password) == 0:
-        response_data['meta']['msg'] = '请输入正确的用户名或密码'
-        response_data['meta']['status'] = RETCODE.LOGINERR
+        response_data = gen_response_data(RETCODE.LOGINERR, '请输入正确的用户名或密码')
         return jsonify(response_data)
     user = UserModel.query.filter(UserModel.username == username).first()
     if not user:
-        response_data['meta']['msg'] = '未找到用户'
-        response_data['meta']['status'] = RETCODE.NOUSER
+        response_data = gen_response_data(RETCODE.NOUSER, '未找到用户')
         return jsonify(response_data)
     if not check_password_hash(user.password, password):
-        response_data['meta']['msg'] = '密码错误'
-        response_data['meta']['status'] = RETCODE.PWDERR
+        response_data = gen_response_data(RETCODE.PWDERR, '密码错误')
         return jsonify(response_data)
     token = jwt_encode({'uid': user.id, 'username': user.username})
-    response_data['meta']['msg'] = '登录成功'
-    response_data['meta']['status'] = RETCODE.OK
-    response_data['data']['token'] = token
+    response_data = gen_response_data(RETCODE.OK, '登录成功', token=token)
     return jsonify(response_data)
 
 
@@ -112,24 +99,18 @@ def phone_login():
     r_code = request.json.get('code', None)
     code = redis_store.get('valid_code:{}'.format(phone))
     if len(phone) == 0 or len(r_code) == 0:
-        response_data['meta']['msg'] = '请正确输入手机号或验证码'
-        response_data['meta']['status'] = RETCODE.LOGINERR
+        response_data = gen_response_data(RETCODE.LOGINERR, '请正确输入手机号或验证码')
         return jsonify(response_data)
     if code is None:
-        response_data['meta']['msg'] = '验证码过期'
-        response_data['meta']['status'] = RETCODE.CODEEXPIRES
+        response_data = gen_response_data(RETCODE.CODEEXPIRES, '验证码过期')
         return jsonify(response_data)
     if code != r_code:
-        response_data['meta']['msg'] = '验证码错误'
-        response_data['meta']['status'] = RETCODE.CODEERR
+        response_data = gen_response_data(RETCODE.CODEERR, '验证码错误')
         return jsonify(response_data)
     user = UserModel.query.filter(UserModel.phone == phone).first()
     if not user:
-        response_data['meta']['msg'] = '未找到用户'
-        response_data['meta']['status'] = RETCODE.NOUSER
+        response_data = gen_response_data(RETCODE.NOUSER, '未找到用户')
         return jsonify(response_data)
     token = jwt_encode({'uid': user.id, 'username': user.username})
-    response_data['meta']['msg'] = '登录成功'
-    response_data['meta']['status'] = RETCODE.OK
-    response_data['data']['token'] = token
+    response_data = gen_response_data(RETCODE.OK, '登录成功', token=token)
     return jsonify(response_data)
