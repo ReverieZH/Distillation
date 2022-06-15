@@ -9,6 +9,8 @@ from aliyunsdkcore.acs_exception.exceptions import ServerException
 from aliyunsdkcore.auth.credentials import AccessKeyCredential
 from aliyunsdkcore.auth.credentials import StsTokenCredential
 from aliyunsdkdysmsapi.request.v20170525.SendSmsRequest import SendSmsRequest
+from model.ocr.paddleocr import PaddleOCR
+# from paddleocr import PaddleOCR
 
 db = SQLAlchemy()
 redis_store = StrictRedis(host=config.REDIS_HOST, port=config.REDIS_PORT, decode_responses=True)
@@ -23,3 +25,4 @@ credentials = AccessKeyCredential(config.AccessKey_ID, config.AccessKey_Secret)
 # credentials = StsTokenCredential('<your-access-key-id>', '<your-access-key-secret>', '<your-sts-token>')
 client = AcsClient(region_id='cn-hangzhou', credential=credentials)
 
+ocr = PaddleOCR()

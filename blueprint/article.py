@@ -1,33 +1,68 @@
-from flask import Blueprint, _request_ctx_stack, jsonify, request
-from tempfile import TemporaryFile
-from exts import *
+import json
+import numpy as np
 import config
+from tempfile import TemporaryFile
+from flask import Blueprint, _request_ctx_stack, jsonify, request
+from sqlalchemy import text, func
+from blueprint import RETCODE
+from exts import *
+from models import ArticleModel
 from .decorators import jwt_required
 from .utils import JSONEncoder, gen_response_data
-from blueprint import RETCODE
-from models import ArticleModel
-import json
-from sqlalchemy import text, func
+from PIL import Image
+from docx import Document
 
 bp = Blueprint('article', __name__, url_prefix="/api/article")
 
 
-@bp.route("/ocr")
+@bp.route("/ocr", methods=['POST'])
 def generate_by_ocr():
-    return "由ocr方式抽取"
+    image_files = request.files.getlist('image')
+    if not image_files:
+        response_data = gen_response_data(RETCODE.PARAMERR, '请上传图片')
+        return jsonify(response_data)
+    try:
+        text = ''
+        for image_file in image_files:
+            img = Image.open(image_file.stream).convert('RGB')
+            img = np.array(img)
+            result = ocr.ocr(img)
+            for line in result:
+                text += line[1][0]
+        response_data = gen_response_data(RETCODE.OK, '抽取成功', title='title', abstract='abstract', text=text)
+    except Exception as e:
+        response_data = gen_response_data(RETCODE.EXCEPTION, '抽取失败')
+    return jsonify(response_data)
 
 
-@bp.route("/doc")
+@bp.route("/doc", methods=['POST'])
 def generate_by_doc():
-    response_data_g = gen_response_data(2000, '成功', title='title', abstract='abstract')
-    return response_data_g
+    doc_file = request.files.get('doc')
+    if not doc_file:
+        response_data = gen_response_data(RETCODE.PARAMERR, '请上传文档')
+        return jsonify(response_data)
+    try:
+        temporary_file = TemporaryFile()
+        temporary_file.write(doc_file.stream.read())
+        temporary_file.seek(0)
+        doc = Document(temporary_file)
+        text = ''
+        for para in doc.paragraphs:
+            text += para.text
+        response_data = gen_response_data(RETCODE.OK, '抽取成功', title='title', abstract='abstract', text=text)
+    except Exception as e:
+        response_data = gen_response_data(RETCODE.EXCEPTION, '抽取失败')
+    return response_data
 
 
 @bp.route("/text", methods=['POST'])
 def generate_by_text():
     content = request.json.get('content')
-    title, abstract = '', ''  # 由模型生成的摘要和标题
-    response_data = gen_response_data(RETCODE.OK, '成功', title='title', abstract='abstract')
+    try:
+        title, abstract = '', ''  # 由模型生成的摘要和标题
+        response_data = gen_response_data(RETCODE.OK, '成功', title='title', abstract='abstract')
+    except Exception as e:
+        response_data = gen_response_data(RETCODE.EXCEPTION, '抽取失败')
     return jsonify(response_data)
 
 

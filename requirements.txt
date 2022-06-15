@@ -11,3 +11,5 @@ alembic~=1.8.0
 sqlalchemy~=1.4.37
 cos-python-sdk-v5
 aliyun-python-sdk-dysmsapi==2.1.2
+python-docx
+paddlepaddle
