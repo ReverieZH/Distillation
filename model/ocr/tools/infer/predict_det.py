@@ -25,11 +25,11 @@ import numpy as np
 import time
 import sys
 
-import tools.infer.utility as utility
-from ppocr.utils.logging import get_logger
-from ppocr.utils.utility import get_image_file_list, check_and_read_gif
-from ppocr.data import create_operators, transform
-from ppocr.postprocess import build_post_process
+import model.ocr.tools.infer.utility as utility
+from model.ocr.ppocr.utils.logging import get_logger
+from model.ocr.ppocr.utils.utility import get_image_file_list, check_and_read_gif
+from model.ocr.ppocr.data import create_operators, transform
+from model.ocr.ppocr.postprocess import build_post_process
 import json
 logger = get_logger()
 

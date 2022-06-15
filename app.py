@@ -3,7 +3,6 @@ import config
 from exts import db
 from blueprint import article_bp, user_bp
 from flask_migrate import Migrate
-from model import *
 
 app = Flask(__name__)
 # 配置信息
