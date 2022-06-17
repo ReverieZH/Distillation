@@ -40,5 +40,3 @@ scheme = 'https'
 bucket = 'distillation-1312273849'
 
 # 阿里云
-AccessKey_ID = 'LTAI5tSjBWoTY35EGStKC97L'
-AccessKey_Secret = 'GvfwhzRsFeRR8TTMBxNyB3xqzStbLp'
