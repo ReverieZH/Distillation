@@ -13,3 +13,6 @@ cos-python-sdk-v5
 aliyun-python-sdk-dysmsapi==2.1.2
 python-docx
 paddlepaddle
+torch
+transformers
+harvesttext
