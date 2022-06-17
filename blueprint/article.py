@@ -59,8 +59,8 @@ def generate_by_doc():
 def generate_by_text():
     content = request.json.get('content')
     try:
-        title, abstract = '', ''  # 由模型生成的摘要和标题
-        response_data = gen_response_data(RETCODE.OK, '成功', title='title', abstract='abstract')
+        result = generate.get_title_and_abstract(article=content)
+        response_data = gen_response_data(RETCODE.OK, '成功', **result)
     except Exception as e:
         response_data = gen_response_data(RETCODE.EXCEPTION, '抽取失败')
     return jsonify(response_data)

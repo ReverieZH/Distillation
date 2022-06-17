@@ -11,7 +11,7 @@ from aliyunsdkcore.auth.credentials import StsTokenCredential
 from aliyunsdkdysmsapi.request.v20170525.SendSmsRequest import SendSmsRequest
 from model.ocr.paddleocr import PaddleOCR
 # from paddleocr import PaddleOCR
-
+from model.article.generate import Options, Generate
 db = SQLAlchemy()
 redis_store = StrictRedis(host=config.REDIS_HOST, port=config.REDIS_PORT, decode_responses=True)
 
@@ -26,3 +26,6 @@ credentials = AccessKeyCredential(config.AccessKey_ID, config.AccessKey_Secret)
 client = AcsClient(region_id='cn-hangzhou', credential=credentials)
 
 ocr = PaddleOCR()
+
+options = Options(model_path='./weight/article', vocab_path="./weight/article/vocab.txt")
+generate = Generate(options=options)
