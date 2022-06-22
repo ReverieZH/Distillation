@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 import config
 from exts import db
 from blueprint import article_bp, user_bp
@@ -6,6 +7,7 @@ from flask_migrate import Migrate
 from models import *
 
 app = Flask(__name__)
+CORS(app)
 # 配置信息
 app.config.from_object(config)
 
