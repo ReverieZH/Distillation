@@ -38,6 +38,9 @@ def save_result():
     content = request.json.get('content')
     title = request.json.get('title')
     abstract = request.json.get('abstract')
+    if not content or not title or not abstract:
+        response_data = gen_response_data(RETCODE.PARAMERR, '请求参数不满足，请输入文章的内容和生成的标题与摘要')
+        return jsonify(response_data)
     try:
         history_count = \
             db.session.query(func.count(ArticleModel.id)).filter(ArticleModel.user_id == user['uid']).first()[0]
@@ -51,8 +54,8 @@ def save_result():
             StorageClass='STANDARD',
             ContentType='text/html; charset=utf-8'
         )
-        response_data = gen_response_data(RETCODE.OK, '保存成功', article_id='article.id')
         db.session.commit()
+        response_data = gen_response_data(RETCODE.OK, '保存成功', article_id=article.id)
     except Exception as e:
         db.session.rollback()  # 数据库添加失败或云端保存失败时回滚
         response_data = gen_response_data(RETCODE.EXCEPTION, '保存失败')
