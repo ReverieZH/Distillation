@@ -69,7 +69,7 @@ def jwt_required(fn):
             return jsonify(response_data)
         _request_ctx_stack.top.current_identity = payload.get('identity')
         if payload.get('identity') is None:
-            response_data = gen_response_data(RETCODE.NOLOGIN, '用户不存在')
+            response_data = gen_response_data(RETCODE.NOLOGIN, '未登录')
             return jsonify(response_data)
         return fn(*args, **kwargs)
     return wapper

@@ -22,14 +22,15 @@ def generate_by_ocr():
         response_data = gen_response_data(RETCODE.PARAMERR, '请上传图片')
         return jsonify(response_data)
     try:
-        text = ''
+        content = ''
         for image_file in image_files:
             img = Image.open(image_file.stream).convert('RGB')
             img = np.array(img)
             result = ocr.ocr(img)
             for line in result:
-                text += line[1][0]
-        response_data = gen_response_data(RETCODE.OK, '抽取成功', title='title', abstract='abstract', text=text)
+                content += line[1][0]
+        result = generate.get_title_and_abstract(article=content)
+        response_data = gen_response_data(RETCODE.OK, '抽取成功', content=content, **result)
     except Exception as e:
         response_data = gen_response_data(RETCODE.EXCEPTION, '抽取失败')
     return jsonify(response_data)
@@ -46,10 +47,11 @@ def generate_by_doc():
         temporary_file.write(doc_file.stream.read())
         temporary_file.seek(0)
         doc = Document(temporary_file)
-        text = ''
+        content = ''
         for para in doc.paragraphs:
-            text += para.text
-        response_data = gen_response_data(RETCODE.OK, '抽取成功', title='title', abstract='abstract', text=text)
+            content += para.text
+        result = generate.get_title_and_abstract(article=content)
+        response_data = gen_response_data(RETCODE.OK, '抽取成功', content=content, **result)
     except Exception as e:
         response_data = gen_response_data(RETCODE.EXCEPTION, '抽取失败')
     return response_data
@@ -58,9 +60,12 @@ def generate_by_doc():
 @bp.route("/text", methods=['POST'])
 def generate_by_text():
     content = request.json.get('content')
+    if not content:
+        response_data = gen_response_data(RETCODE.PARAMERR, '请输入文本内容')
+        return jsonify(response_data)
     try:
         result = generate.get_title_and_abstract(article=content)
-        response_data = gen_response_data(RETCODE.OK, '成功', **result)
+        response_data = gen_response_data(RETCODE.OK, '抽取成功', **result)
     except Exception as e:
         response_data = gen_response_data(RETCODE.EXCEPTION, '抽取失败')
     return jsonify(response_data)
@@ -73,6 +78,9 @@ def save_result():
     content = request.json.get('content')
     title = request.json.get('title')
     abstract = request.json.get('abstract')
+    if not content or not title or not abstract:
+        response_data = gen_response_data(RETCODE.PARAMERR, '请求参数不满足，请输入文章的内容和生成的标题与摘要')
+        return jsonify(response_data)
     try:
         history_count = \
             db.session.query(func.count(ArticleModel.id)).filter(ArticleModel.user_id == user['uid']).first()[0]
@@ -86,8 +94,8 @@ def save_result():
             StorageClass='STANDARD',
             ContentType='text/html; charset=utf-8'
         )
-        response_data = gen_response_data(RETCODE.OK, '保存成功', article_id='article.id')
         db.session.commit()
+        response_data = gen_response_data(RETCODE.OK, '保存成功', article_id=article.id)
     except Exception as e:
         db.session.rollback()  # 数据库添加失败或云端保存失败时回滚
         response_data = gen_response_data(RETCODE.EXCEPTION, '保存失败')
@@ -132,6 +140,23 @@ def get_history_detail(id):
         data_json = json.loads(json.dumps(article, cls=JSONEncoder))
         data_json['text'] = text
         response_data = gen_response_data(RETCODE.OK, '获取成功', article=data_json)
+    except Exception as e:
+        response_data = gen_response_data(RETCODE.EXCEPTION, '获取失败')
+        return jsonify(response_data)
+    return jsonify(response_data)
+
+@bp.route("/delete/<id>/", methods=['GET'])
+@jwt_required
+def delete_history(id):
+    article = ArticleModel.query.filter(ArticleModel.id == id).first()
+    if not article:
+        response_data = gen_response_data(RETCODE.NODETAIL, '未找到对应历史记录')
+        return jsonify(response_data)
+    try:
+        # 从云端读取数据
+        article.status = 0
+        db.session.commit()
+        response_data = gen_response_data(RETCODE.OK, '删除成功')
     except Exception as e:
         response_data = gen_response_data(RETCODE.EXCEPTION, '获取失败')
         return jsonify(response_data)

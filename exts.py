@@ -13,7 +13,7 @@ from model.ocr.paddleocr import PaddleOCR
 # from paddleocr import PaddleOCR
 from model.article.generate import Options, Generate
 db = SQLAlchemy()
-redis_store = StrictRedis(host=config.REDIS_HOST, port=config.REDIS_PORT, decode_responses=True)
+redis_store = StrictRedis(host=config.REDIS_HOST, port=config.REDIS_PORT, password=config.REDIS_PWD, decode_responses=True)
 
 cos_config = CosConfig(Region=config.region, SecretId=config.secret_id, SecretKey=config.secret_key, Token=config.token,
                        Scheme=config.scheme)
