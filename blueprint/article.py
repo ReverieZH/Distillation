@@ -101,3 +101,20 @@ def get_history_detail(id):
         response_data = gen_response_data(RETCODE.EXCEPTION, '获取失败')
         return jsonify(response_data)
     return jsonify(response_data)
+
+@bp.route("/delete/<id>/", methods=['GET'])
+@jwt_required
+def delete_history(id):
+    article = ArticleModel.query.filter(ArticleModel.id == id).first()
+    if not article:
+        response_data = gen_response_data(RETCODE.NODETAIL, '未找到对应历史记录')
+        return jsonify(response_data)
+    try:
+        # 从云端读取数据
+        article.status = 0
+        db.session.commit()
+        response_data = gen_response_data(RETCODE.OK, '删除成功')
+    except Exception as e:
+        response_data = gen_response_data(RETCODE.EXCEPTION, '获取失败')
+        return jsonify(response_data)
+    return jsonify(response_data)
