@@ -16,3 +16,4 @@ paddlepaddle
 torch
 transformers
 harvesttext
+flask_cors
