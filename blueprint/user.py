@@ -34,6 +34,7 @@ def valid_code():
         # 这里用输出验证码来代替短信发送验证码
         return sms_response
     except Exception as e:
+        print(e)
         return jsonify(status='失败', msg="验证码发送失败")
 
 
@@ -43,8 +44,8 @@ def register():
     username = request.json.get('username', None)
     password = request.json.get('password', None)
     confirm_password = request.json.get('confirm_password', None)
-    phone = request.json.get('phone',  None)
-    r_code = request.json.get('code',  None)
+    phone = request.json.get('phone', None)
+    r_code = request.json.get('code', None)
     code = redis_store.get('valid_code:{}'.format(phone))
     if code is None:
         response_data = gen_response_data(RETCODE.CODEEXPIRES, '验证码过期')
@@ -78,10 +79,12 @@ def register():
 def login():
     username = request.json.get('username', '')
     password = request.json.get('password', '')
-    if len(username) == 0 or len(password) == 0:
-        response_data = gen_response_data(RETCODE.LOGINERR, '请输入正确的用户名或密码')
+    if len(password) == 0 or len(username) == 0:
+        response_data = gen_response_data(RETCODE.LOGINERR, '请输入用户名或手机号和密码')
         return jsonify(response_data)
-    user = UserModel.query.filter(UserModel.username == username).first()
+    userbyusername = UserModel.query.filter(UserModel.username == username).first()
+    userbyphone = UserModel.query.filter(UserModel.phone == username).first()
+    user = userbyusername if userbyusername is not None else userbyphone
     if not user:
         response_data = gen_response_data(RETCODE.NOUSER, '未找到用户')
         return jsonify(response_data)

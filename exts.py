@@ -11,7 +11,7 @@ from aliyunsdkcore.auth.credentials import StsTokenCredential
 from aliyunsdkdysmsapi.request.v20170525.SendSmsRequest import SendSmsRequest
 
 db = SQLAlchemy()
-redis_store = StrictRedis(host=config.REDIS_HOST, port=config.REDIS_PORT, decode_responses=True)
+redis_store = StrictRedis(host=config.REDIS_HOST, password=config.REDIS_PWD,port=config.REDIS_PORT, decode_responses=True)
 
 cos_config = CosConfig(Region=config.region, SecretId=config.secret_id, SecretKey=config.secret_key, Token=config.token,
                        Scheme=config.scheme)
