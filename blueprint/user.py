@@ -78,10 +78,12 @@ def register():
 def login():
     username = request.json.get('username', '')
     password = request.json.get('password', '')
-    if len(username) == 0 or len(password) == 0:
-        response_data = gen_response_data(RETCODE.LOGINERR, '请输入正确的用户名或密码')
+    if len(password) == 0 or len(username) == 0:
+        response_data = gen_response_data(RETCODE.LOGINERR, '请输入用户名或手机号和密码')
         return jsonify(response_data)
-    user = UserModel.query.filter(UserModel.username == username).first()
+    userbyusername = UserModel.query.filter(UserModel.username == username).first()
+    userbyphone = UserModel.query.filter(UserModel.phone == username).first()
+    user = userbyusername if userbyusername is not None else userbyphone
     if not user:
         response_data = gen_response_data(RETCODE.NOUSER, '未找到用户')
         return jsonify(response_data)
@@ -91,6 +93,7 @@ def login():
     token = jwt_encode({'uid': user.id, 'username': user.username})
     response_data = gen_response_data(RETCODE.OK, '登录成功', token=token)
     return jsonify(response_data)
+
 
 
 @bp.route("/phone_login", methods=['POST'])
