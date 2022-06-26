@@ -76,7 +76,7 @@ def get_history():
     return jsonify(response_data)
 
 
-@bp.route("/detail/<id>/", methods=['GET'])
+@bp.route("/detail/<id>", methods=['GET'])
 @jwt_required
 def get_history_detail(id):
     remote_file = TemporaryFile()  # 创建临时文件
@@ -105,7 +105,7 @@ def get_history_detail(id):
         return jsonify(response_data)
     return jsonify(response_data)
 
-@bp.route("/delete/<id>/", methods=['GET'])
+@bp.route("/delete/<id>", methods=['GET'])
 @jwt_required
 def delete_history(id):
     article = ArticleModel.query.filter(ArticleModel.id == id).first()
