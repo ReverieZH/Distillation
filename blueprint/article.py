@@ -2,7 +2,7 @@ import json
 import numpy as np
 import config
 from tempfile import TemporaryFile
-from flask import Blueprint, _request_ctx_stack, jsonify, request, Response
+from flask import Blueprint, _request_ctx_stack, jsonify, request, Response, render_template
 from sqlalchemy import text, func
 from blueprint import RETCODE
 from exts import *
@@ -13,6 +13,7 @@ from PIL import Image
 from docx import Document
 
 bp = Blueprint('article', __name__, url_prefix="/api/article")
+
 
 
 @bp.route("/ocr", methods=['POST'])
@@ -29,12 +30,10 @@ def generate_by_ocr():
             result = ocr.ocr(img)
             for line in result:
                 content += line[1][0]
-        result = generate.get_title_and_abstract(article=content)
-        response_data = gen_response_data(RETCODE.OK, '抽取成功', content=content, **result)
+        response_data = gen_response_data(RETCODE.OK, '识别成功', content=content)
     except Exception as e:
-        response_data = gen_response_data(RETCODE.EXCEPTION, '抽取失败')
+        response_data = gen_response_data(RETCODE.EXCEPTION, '识别失败')
     return jsonify(response_data)
-
 
 @bp.route("/doc", methods=['POST'])
 def generate_by_doc():
@@ -50,14 +49,13 @@ def generate_by_doc():
         content = ''
         for para in doc.paragraphs:
             content += para.text
-        result = generate.get_title_and_abstract(article=content)
-        response_data = gen_response_data(RETCODE.OK, '抽取成功', content=content, **result)
+        response_data = gen_response_data(RETCODE.OK, '识别成功', content=content)
     except Exception as e:
-        response_data = gen_response_data(RETCODE.EXCEPTION, '抽取失败')
+        response_data = gen_response_data(RETCODE.EXCEPTION, '识别失败')
     return response_data
 
 
-@bp.route("/text", methods=['POST'])
+@bp.route("/generate", methods=['POST'])
 def generate_by_text():
     content = request.json.get('content')
     if not content:
