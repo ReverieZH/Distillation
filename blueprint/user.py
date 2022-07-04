@@ -1,5 +1,6 @@
 import re
 import json
+import requests
 from flask import Blueprint, jsonify, request, make_response, _request_ctx_stack
 from exts import *
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -136,7 +137,7 @@ def modify_icon():
             StorageClass='STANDARD',
             ContentType='text/html; charset=utf-8'
         )
-        url = cos_client.get_presigned_url(Bucket=config.bucket, Key=filepath, Method='GET', Params={
+        url = cos_client.get_presigned_url(Bucket=config.bucket, Key=filepath, Method='GET', Expired=3153600000,Params={
             'response-content-disposition': 'attachment',
             'response-content-type': 'application%2Foctet-stream'
         },)
