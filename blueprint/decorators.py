@@ -96,3 +96,17 @@ def register_required(fn):
             return jsonify(response_data)
         return fn(*args, **kwargs)
     return wapper
+
+def modify_password_required(fn):
+    @wraps(fn)
+    def wapper(*args, **kwargs):
+        new_password = request.json.get('new_password', None)
+        if new_password is None :
+            response_data = gen_response_data(RETCODE.PARAMERR, '请输入修改的密码')
+            return jsonify(response_data)
+        password_match = re.search(re.compile(r'[0-9a-zA-Z]{8,10}'), new_password)
+        if password_match is None:
+            response_data = gen_response_data(RETCODE.PARAMERR, '密码格式不正确,包含数字、大写或小写字母8到16位')
+            return jsonify(response_data)
+        return fn(*args, **kwargs)
+    return wapper

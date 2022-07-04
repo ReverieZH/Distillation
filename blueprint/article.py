@@ -15,10 +15,9 @@ from docx import Document
 bp = Blueprint('article', __name__, url_prefix="/api/article")
 
 
-
 @bp.route("/ocr", methods=['POST'])
 def generate_by_ocr():
-    image_files = request.files.getlist('image')
+    image_files = request.files.getlist('image[]')
     if not image_files:
         response_data = gen_response_data(RETCODE.PARAMERR, '请上传图片')
         return jsonify(response_data)
@@ -34,6 +33,7 @@ def generate_by_ocr():
     except Exception as e:
         response_data = gen_response_data(RETCODE.EXCEPTION, '识别失败')
     return jsonify(response_data)
+
 
 @bp.route("/doc", methods=['POST'])
 def generate_by_doc():
@@ -96,6 +96,7 @@ def save_result():
         response_data = gen_response_data(RETCODE.OK, '保存成功', article_id=article.id)
     except Exception as e:
         db.session.rollback()  # 数据库添加失败或云端保存失败时回滚
+        print(str(e))
         response_data = gen_response_data(RETCODE.EXCEPTION, '保存失败')
     return jsonify(response_data)
 
@@ -105,7 +106,7 @@ def save_result():
 def get_history():
     user = _request_ctx_stack.top.current_identity
     try:
-        articles = ArticleModel.query.filter(ArticleModel.user_id == user['uid']).order_by(text('-join_time')).all()
+        articles = ArticleModel.query.filter(ArticleModel.user_id == user['uid'], ArticleModel.status == 1).order_by(text('-join_time')).all()
         data_json = json.loads(json.dumps(articles, cls=JSONEncoder))
         response_data = gen_response_data(RETCODE.OK, '查找成功', articles=data_json)
     except Exception as e:
@@ -143,9 +144,11 @@ def get_history_detail(id):
         return jsonify(response_data)
     return response_data
 
+
 @bp.route("/delete/<id>", methods=['GET'])
 @jwt_required
 def delete_history(id):
+    user = _request_ctx_stack.top.current_identity
     article = ArticleModel.query.filter(ArticleModel.id == id).first()
     if not article:
         response_data = gen_response_data(RETCODE.NODETAIL, '未找到对应历史记录')
@@ -154,7 +157,10 @@ def delete_history(id):
         # 从云端读取数据
         article.status = 0
         db.session.commit()
-        response_data = gen_response_data(RETCODE.OK, '删除成功')
+        articles = ArticleModel.query.filter(ArticleModel.user_id == user['uid'], ArticleModel.status == 1).order_by(
+            text('-join_time')).all()
+        data_json = json.loads(json.dumps(articles, cls=JSONEncoder))
+        response_data = gen_response_data(RETCODE.OK, '删除成功', articles=data_json)
     except Exception as e:
         response_data = gen_response_data(RETCODE.EXCEPTION, '获取失败')
         return jsonify(response_data)
