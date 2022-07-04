@@ -100,7 +100,11 @@ def register_required(fn):
 def modify_password_required(fn):
     @wraps(fn)
     def wapper(*args, **kwargs):
+        password = request.json.get('password', None)
         new_password = request.json.get('new_password', None)
+        if password is None:
+            response_data = gen_response_data(RETCODE.PARAMERR, '请输入旧密码')
+            return jsonify(response_data)
         if new_password is None :
             response_data = gen_response_data(RETCODE.PARAMERR, '请输入修改的密码')
             return jsonify(response_data)
