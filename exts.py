@@ -27,5 +27,5 @@ client = AcsClient(region_id='cn-hangzhou', credential=credentials)
 
 ocr = PaddleOCR()
 
-options = Options(model_path='./weight/article', vocab_path="./weight/article/vocab.txt")
+options = Options(model_path='./weight/article', vocab_path="./weight/article/vocab.txt", title_max_len=42)
 generate = Generate(options=options)
