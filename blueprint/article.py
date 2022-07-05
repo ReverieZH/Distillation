@@ -42,13 +42,17 @@ def generate_by_doc():
         response_data = gen_response_data(RETCODE.PARAMERR, '请上传文档')
         return jsonify(response_data)
     try:
-        temporary_file = TemporaryFile()
-        temporary_file.write(doc_file.stream.read())
-        temporary_file.seek(0)
-        doc = Document(temporary_file)
+        suffix = doc_file.filename.split(".")[1]
         content = ''
-        for para in doc.paragraphs:
-            content += para.text
+        if suffix == "doc" or suffix == "docx":
+            temporary_file = TemporaryFile()
+            temporary_file.write(doc_file.stream.read())
+            temporary_file.seek(0)
+            doc = Document(temporary_file)
+            for para in doc.paragraphs:
+                content += para.text
+        elif suffix == "txt":
+            content = doc_file.stream.read().decode(encoding="utf-8")
         response_data = gen_response_data(RETCODE.OK, '识别成功', content=content)
     except Exception as e:
         response_data = gen_response_data(RETCODE.EXCEPTION, '识别失败')
@@ -106,7 +110,8 @@ def save_result():
 def get_history():
     user = _request_ctx_stack.top.current_identity
     try:
-        articles = ArticleModel.query.filter(ArticleModel.user_id == user['uid'], ArticleModel.status == 1).order_by(text('-join_time')).all()
+        articles = ArticleModel.query.filter(ArticleModel.user_id == user['uid'], ArticleModel.status == 1).order_by(
+            text('-join_time')).all()
         data_json = json.loads(json.dumps(articles, cls=JSONEncoder))
         response_data = gen_response_data(RETCODE.OK, '查找成功', articles=data_json)
     except Exception as e:
