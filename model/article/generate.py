@@ -1,8 +1,8 @@
 #coding=utf-8
-import torch
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICE"] = '0'
+import torch
 from transformers.models.gpt2.modeling_gpt2 import GPT2LMHeadModel
 from transformers import BertTokenizer
 import torch.nn.functional as F
@@ -16,7 +16,7 @@ class Options:
         repetition_penalty=1.2,
         top_k=5,
         top_p=0.95,
-        title_max_len=40,
+        title_max_len=42,
         abstract_sentences_num=10
     ) -> None:
         self.model_path = model_path
@@ -40,9 +40,10 @@ class Generate:
     
     def get_title_and_abstract(self, article:str):
         sentences = self.ht.cut_sentences(article)
-        top_k_sents = self.ht.get_summary(sentences, topK=25, maxlen=(self.options.model_input_max_len - 3 - self.options.title_max_len))
+        sentences_num = len(sentences)
+        top_k_sents = self.ht.get_summary(sentences, topK=min(25, sentences_num), maxlen=(self.options.model_input_max_len - 3 - self.options.title_max_len))
         article = ''.join(top_k_sents)
-        abstract = self.ht.get_summary(sentences, topK=self.options.abstract_sentences_num, maxlen=512, avoid_repeat=True)
+        abstract = self.ht.get_summary(sentences, topK=min(self.options.abstract_sentences_num, sentences_num), maxlen=512, avoid_repeat=True)
         abstract = ''.join(abstract)
         self.model.eval()
         title = self.predict_title(self.model, self.tokenizer, self.device, self.options, article)
