@@ -2,7 +2,8 @@ import json
 import numpy as np
 import config
 from tempfile import TemporaryFile
-from flask import Blueprint, _request_ctx_stack, jsonify, request, Response, render_template
+from flask import Blueprint, _request_ctx_stack, jsonify, request, Response, render_template, send_from_directory, \
+    send_file
 from sqlalchemy import text, func
 from blueprint import RETCODE
 from exts import *
@@ -170,3 +171,20 @@ def delete_history(id):
         response_data = gen_response_data(RETCODE.EXCEPTION, '获取失败')
         return jsonify(response_data)
     return jsonify(response_data)
+
+
+@bp.route('/file', methods=['POST'])
+def recive_file():
+    content = request.json.get('content')
+    title = request.json.get('title')
+    abstract = request.json.get('abstract')
+    temporary_file = TemporaryFile()
+    temporary_file.write(str(title+"\n").encode("utf-8"))
+    temporary_file.write(str("\n").encode("utf-8"))
+    temporary_file.write(str("abstract\n").encode("utf-8"))
+    temporary_file.write(str(abstract+"\n").encode("utf-8"))
+    temporary_file.write(str("\n").encode("utf-8"))
+    temporary_file.write(str(content).encode("utf-8"))
+    temporary_file.seek(0)
+    return send_file(temporary_file, download_name="generate.doc", as_attachment=True)
+
