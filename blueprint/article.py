@@ -95,7 +95,7 @@ def generate_by_doc():
                     for x in layout:
                         if (isinstance(x, LTTextBox)):  # 网上是判断LTTextBoxHorizontal,而在我写代码的时候，只能判断LTTextBox
                             content += x.get_text()
-            response_data = gen_response_data(RETCODE.EXCEPTION, '识别成功', content=content)
+        response_data = gen_response_data(RETCODE.EXCEPTION, '识别成功', content=content)
     except Exception as e:
         print(e)
         response_data = gen_response_data(RETCODE.EXCEPTION, '识别失败')
