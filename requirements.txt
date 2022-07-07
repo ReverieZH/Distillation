@@ -12,8 +12,9 @@ sqlalchemy~=1.4.37
 cos-python-sdk-v5
 aliyun-python-sdk-dysmsapi==2.1.2
 python-docx
-paddlepaddle
+paddlepaddle-gpu
 torch
 transformers
 harvesttext
-flask_cors
+flask_corsgpug
+pdfminer3k

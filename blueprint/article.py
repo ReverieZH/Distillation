@@ -12,6 +12,11 @@ from .decorators import jwt_required
 from .utils import JSONEncoder, gen_response_data
 from PIL import Image
 from docx import Document
+from pdfminer.pdfparser import PDFParser, PDFDocument
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.converter import PDFPageAggregator
+from pdfminer.layout import LAParams, LTTextBox
+from pdfminer.pdfinterp import PDFTextExtractionNotAllowed
 
 bp = Blueprint('article', __name__, url_prefix="/api/article")
 
@@ -54,8 +59,45 @@ def generate_by_doc():
                 content += para.text
         elif suffix == "txt":
             content = doc_file.stream.read().decode(encoding="utf-8")
-        response_data = gen_response_data(RETCODE.OK, '识别成功', content=content)
+        elif suffix == "pdf":
+            temporary_file = TemporaryFile()
+            temporary_file.write(doc_file.stream.read())
+            temporary_file.seek(0)
+            # 用文件对象来创建一个pdf文档分析器
+            praser = PDFParser(temporary_file)
+            # 创建一个PDF文档
+            doc = PDFDocument()
+            # 连接分析器与文档对象
+            praser.set_document(doc)
+            doc.set_parser(praser)
+            # 提供初始化密码，如果没有密码，就创建一个空的字符串
+            doc.initialize()
+            # 检查文档是否可以转成TXT，如果不可以就忽略
+            if not doc.is_extractable:
+                raise PDFTextExtractionNotAllowed
+            else:
+                # 创建PDF资源管理器，来管理共享资源
+                rsrcmagr = PDFResourceManager()
+                # 创建一个PDF设备对象
+                laparams = LAParams()
+                # 将资源管理器和设备对象聚合
+                device = PDFPageAggregator(rsrcmagr, laparams=laparams)
+                # 创建一个PDF解释器对象
+                interpreter = PDFPageInterpreter(rsrcmagr, device)
+                # 循环遍历列表，每次处理一个page内容
+                # doc.get_pages()获取page列表
+                for pg in doc.get_pages():
+                    interpreter.process_page(pg)
+                    # 接收该页面的LTPage对象
+                    layout = device.get_result()
+                    # 这里的layout是一个LTPage对象 里面存放着page解析出来的各种对象
+                    # 一般包括LTTextBox，LTFigure，LTImage，LTTextBoxHorizontal等等一些对像
+                    for x in layout:
+                        if (isinstance(x, LTTextBox)):  # 网上是判断LTTextBoxHorizontal,而在我写代码的时候，只能判断LTTextBox
+                            content += x.get_text()
+            response_data = gen_response_data(RETCODE.EXCEPTION, '识别成功', content=content)
     except Exception as e:
+        print(e)
         response_data = gen_response_data(RETCODE.EXCEPTION, '识别失败')
     return response_data
 
@@ -67,6 +109,7 @@ def generate_by_text():
         response_data = gen_response_data(RETCODE.PARAMERR, '请输入文本内容')
         return jsonify(response_data)
     try:
+        print(content)
         result = generate.get_title_and_abstract(article=content)
         response_data = gen_response_data(RETCODE.OK, '抽取成功', **result)
     except Exception as e:
