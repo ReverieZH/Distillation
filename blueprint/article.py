@@ -57,8 +57,10 @@ def generate_by_doc():
             doc = Document(temporary_file)
             for para in doc.paragraphs:
                 content += para.text
+            response_data = gen_response_data(RETCODE.EXCEPTION, '识别成功', content=content)
         elif suffix == "txt":
             content = doc_file.stream.read().decode(encoding="utf-8")
+            response_data = gen_response_data(RETCODE.EXCEPTION, '识别成功', content=content)
         elif suffix == "pdf":
             temporary_file = TemporaryFile()
             temporary_file.write(doc_file.stream.read())
@@ -96,8 +98,10 @@ def generate_by_doc():
                         if (isinstance(x, LTTextBox)):  # 网上是判断LTTextBoxHorizontal,而在我写代码的时候，只能判断LTTextBox
                             content += x.get_text()
             response_data = gen_response_data(RETCODE.EXCEPTION, '识别成功', content=content)
+        else:
+            response_data = gen_response_data(RETCODE.PARAMERR, '请上传指定格式文档')
+            return jsonify(response_data)
     except Exception as e:
-        print(e)
         response_data = gen_response_data(RETCODE.EXCEPTION, '识别失败')
     return response_data
 
@@ -211,7 +215,7 @@ def delete_history(id):
         data_json = json.loads(json.dumps(articles, cls=JSONEncoder))
         response_data = gen_response_data(RETCODE.OK, '删除成功', articles=data_json)
     except Exception as e:
-        response_data = gen_response_data(RETCODE.EXCEPTION, '获取失败')
+        response_data = gen_response_data(RETCODE.EXCEPTION, '删除失败')
         return jsonify(response_data)
     return jsonify(response_data)
 
