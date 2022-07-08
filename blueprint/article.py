@@ -57,10 +57,10 @@ def generate_by_doc():
             doc = Document(temporary_file)
             for para in doc.paragraphs:
                 content += para.text
-            response_data = gen_response_data(RETCODE.EXCEPTION, '识别成功', content=content)
+            response_data = gen_response_data(RETCODE.OK, '识别成功', content=content)
         elif suffix == "txt":
             content = doc_file.stream.read().decode(encoding="utf-8")
-            response_data = gen_response_data(RETCODE.EXCEPTION, '识别成功', content=content)
+            response_data = gen_response_data(RETCODE.OK, '识别成功', content=content)
         elif suffix == "pdf":
             temporary_file = TemporaryFile()
             temporary_file.write(doc_file.stream.read())
@@ -97,7 +97,7 @@ def generate_by_doc():
                     for x in layout:
                         if (isinstance(x, LTTextBox)):  # 网上是判断LTTextBoxHorizontal,而在我写代码的时候，只能判断LTTextBox
                             content += x.get_text()
-            response_data = gen_response_data(RETCODE.EXCEPTION, '识别成功', content=content)
+            response_data = gen_response_data(RETCODE.OK, '识别成功', content=content)
         else:
             response_data = gen_response_data(RETCODE.PARAMERR, '请上传指定格式文档')
             return jsonify(response_data)
