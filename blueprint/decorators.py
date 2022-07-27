@@ -87,7 +87,7 @@ def register_required(fn):
             response_data = gen_response_data(RETCODE.PARAMERR, '您有信息未填写')
             return jsonify(response_data)
         phone_match = re.search(re.compile(r"1[356789]\d{9}"), phone)
-        password_match = re.search(re.compile(r'[0-9a-zA-Z]{8,10}'), password)
+        password_match = re.search(re.compile(r'[0-9a-zA-Z]{8,16}'), password)
         if phone_match is None:
             response_data = gen_response_data(RETCODE.PARAMERR, '手机号格式不正确')
             return jsonify(response_data)
